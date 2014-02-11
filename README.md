@@ -1,4 +1,4 @@
-This is a tool to import bugreports from Bugzilla and create Mingle cards from those reports. More to come!
+This is a tool to import bugreports from Bugzilla and create Mingle or Trello cards from those reports. More to come!
 
 ## Requirements
 * feedparser: https://code.google.com/p/feedparser/
