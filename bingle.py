@@ -103,7 +103,7 @@ if __name__ == "__main__":
         cardParams = {
             'card[name]': bugCardName,
             'card[card_type_name]': bugCard,
-            'card[description]': description,
+            'card[description]': description.replace("\n", "<br />"),
             'card[created_by]': auth['username'],
         }
 
