@@ -1,19 +1,14 @@
 #!/usr/bin/env python
 
-import ConfigParser
 import re
 import json
 import requests
-from optparse import OptionParser
 from cgi import escape as htmlEscape
 
+from config import *
 from lib.bingle import Bingle
 from lib.mingle import Mingle
-
-
-def createDictionaryFromPropertiesList(properties):
-    return dict((key.strip(), value.strip()) for key, value in (prop.split(',')
-                for prop in properties.split(';') if prop.find(',') > -1))
+import bingleResolved
 
 
 def postComments(auth, apiBaseUrl, comments, mingle_id):
@@ -35,31 +30,8 @@ def postComments(auth, apiBaseUrl, comments, mingle_id):
 
 
 if __name__ == "__main__":
-    parser = OptionParser()
-    parser.add_option("-c", "--config", dest="config",
-                      help="Path to bingle config file", default="bingle.ini")
-    (options, args) = parser.parse_args()
-
-    config = ConfigParser.ConfigParser()
-    config.read(options.config)
-    auth = {'username': config.get('auth', 'username'),
-            'password': config.get('auth', 'password')}
-    debug = config.getboolean('debug', 'debug')
-    picklePath = config.get('paths', 'picklePath')
-    apiBaseUrl = config.get('urls', 'mingleApiBase')
-    mingleUrlBase = config.get('urls', 'mingleUrlBase')
-    bugCard = config.get('mingle', 'bugCard')
-    bugIdFieldName = config.get('mingle', 'bugIdFieldName')
-    product = config.get('bugzilla', 'product').split(',')
-    component = config.get('bugzilla', 'component').split(',')
-    bugzillaProperties = createDictionaryFromPropertiesList(
-        config.get('bugzilla', 'properties'))
-    mingleProperties = createDictionaryFromPropertiesList(
-        config.get('mingle', 'properties'))
-    mapping = createDictionaryFromPropertiesList(
-        config.get('mapping', 'properties'))
-
     bingle = Bingle(debug=debug, picklePath=picklePath)
+    bingle.info("Pretend mode: %s" % options.pretend)
 
     # prepare Mingle instance
     mingle = Mingle(auth, apiBaseUrl)
@@ -161,4 +133,14 @@ if __name__ == "__main__":
         }
         bingle.addBugComment(bugzilla_payload, bug.get('id'))
 
+    if options.reconcile:
+        # handle resolved
+        bingle.info("Preparing to reconcile bugs marked as resolved in BZ \
+                    with Mingle.")
+
+        bingle.info("Pretend mode: %s" % options.pretend)
+        bingle.info("Ignoring bugs in: %s" % mingleIgnoreResolved)
+        bingleResolved.execute(bingle=bingle, mingle=mingle,
+                               pretend=options.pretend, fromTime=fromTime)
+        bingle.info("Done reconciling resolved bugs.")
     bingle.updatePickleTime()

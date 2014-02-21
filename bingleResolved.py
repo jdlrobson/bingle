@@ -5,14 +5,14 @@ import re
 import json
 import requests
 import sys
-from optparse import OptionParser
 
+from config import *
 from lib.bingle import Bingle
 from lib.mingle import Mingle
 from bingle import createDictionaryFromPropertiesList
 
 
-def getBzSearchParams():
+def getBzSearchParams(bingle, fromTime=None):
     bzSearchParams = {
         'product': product,
         'component': component,
@@ -24,7 +24,7 @@ def getBzSearchParams():
     return bzSearchParams
 
 
-def fetchBugsResolved(bzSearchParams):
+def fetchBugsResolved(bingle, bzSearchParams):
     bugzillaPayload = {
         'method': 'Bug.search',
         'params': json.dumps([bzSearchParams])
@@ -34,7 +34,7 @@ def fetchBugsResolved(bzSearchParams):
     return bugs
 
 
-def reconcileMingle(bugs, pretend=True):
+def reconcileMingle(bingle, mingle, bugs, pretend=True):
     counter = 0
     cardsToUpdate = []
     for bug in bugs:
@@ -76,41 +76,20 @@ def reconcileMingle(bugs, pretend=True):
                    (mingleUrlBase, cardToUpdate[0], cardToUpdate[1]))
 
 
-def execute(standalone=False, pretend=False):
-    bzSearchParams = getBzSearchParams()
-    bugs = fetchBugsResolved(bzSearchParams)
-    reconcileMingle(bugs, options.pretend)
+def execute(bingle, mingle, standalone=False, pretend=False, fromTime=None):
+    bzSearchParams = getBzSearchParams(bingle, fromTime)
+    bugs = fetchBugsResolved(bingle, bzSearchParams)
+    reconcileMingle(bingle, mingle, bugs, options.pretend)
     if standalone and not pretend:
         # update pickle
         bingle.updatePickleTime()
 
 
 if __name__ == "__main__":
-    parser = OptionParser()
-    parser.add_option("-c", "--config", dest="config",
-                      help="Path to bingle config file", default="bingle.ini")
-    parser.add_option("-p", "--pretend", action="store_true", dest="pretend",
-                      default=False, help="Run in 'pretend' mode")
-    (options, args) = parser.parse_args()
-
+    # config overrides
     config = ConfigParser.ConfigParser()
     config.read(options.config)
-    auth = {'username': config.get('auth', 'username'),
-            'password': config.get('auth', 'password')}
-    debug = config.getboolean('debug', 'debug')
     picklePath = config.get('paths', 'picklePath') + '_resolved'
-    apiBaseUrl = config.get('urls', 'mingleApiBase')
-    mingleUrlBase = config.get('urls', 'mingleUrlBase')
-    bugCard = config.get('mingle', 'bugCard')
-    bugIdFieldName = config.get('mingle', 'bugIdFieldName')
-    product = config.get('bugzilla', 'product').split(',')
-    component = config.get('bugzilla', 'component').split(',')
-    bugzillaProperties = createDictionaryFromPropertiesList(
-        config.get('bugzilla', 'properties'))
-    mingleProperties = createDictionaryFromPropertiesList(
-        config.get('mingle', 'properties'))
-    mapping = createDictionaryFromPropertiesList(
-        config.get('mapping', 'properties'))
     statusResolved = config.get('bingle', 'statusResolved')
     mingleStatusField = config.get('bingle', 'mingleStatusField')
     mingleResolvedStatus = config.get('bingle', 'mingleResolvedStatus')
@@ -128,4 +107,5 @@ if __name__ == "__main__":
     mingle = Mingle(auth, apiBaseUrl)
 
     fromTime = bingle.getTimeFromPickle()
-    execute(standalone=True, pretend=options.pretend)
+    execute(standalone=True, pretend=options.pretend, bingle=bingle,
+            mingle=mingle)
