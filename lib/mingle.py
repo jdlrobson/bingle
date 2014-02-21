@@ -36,7 +36,7 @@ class Mingle:
     def generateMingleBugCardName(self, bugId, bugName):
         # Mingle removes extraneous spaces mid-string; do the same here
         bugName = ' '.join(bugName.split())
-        return '[Bug %s] %s' % (bugId, bugName.replace("'", "\\"))
+        return '[Bug %s] %s' % (bugId, bugName.replace("'", "\'"))
 
     def findCardNumByBugName(self, cardType, bugId, bugName):
         bugCardName = self.generateMingleBugCardName(bugId, bugName)
