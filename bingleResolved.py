@@ -11,7 +11,80 @@ from lib.bingle import Bingle
 from lib.mingle import Mingle
 from bingle import createDictionaryFromPropertiesList
 
-# following 31 lines copied from bingle.py
+
+def getBzSearchParams():
+    bzSearchParams = {
+        'product': product,
+        'component': component,
+        'status': [statusResolved]
+    }
+    if fromTime:
+        bzSearchParams['last_change_time'] = fromTime
+    bingle.info(bzSearchParams)
+    return bzSearchParams
+
+
+def fetchBugsResolved(bzSearchParams):
+    bugzillaPayload = {
+        'method': 'Bug.search',
+        'params': json.dumps([bzSearchParams])
+    }
+    bugs = bingle.getBugEntries(bugzillaPayload)
+    bingle.info('Number of bugs: %s' % len(bugs))
+    return bugs
+
+
+def reconcileMingle(bugs, pretend=True):
+    counter = 0
+    cardsToUpdate = []
+    for bug in bugs:
+        # see if there's a mingle card matching this bug
+        if len(bugIdFieldName) > 0:
+            foundBug = mingle.findCardNumByBugId(
+                bugCard, bug.get('id'), bugIdFieldName)
+        else:
+            foundBug = mingle.findCardNumByBugName(
+                bugCard, bug.get('id'), bug.get('summary'))
+        bingle.info(mingle.dumpRequest())
+        if len(foundBug) < 1:
+            # eh... we probably want to do something else here
+            continue
+        cardId = foundBug[0]['Number']
+        # figure out the card's status
+        status = mingle.getCardById(cardId).getStatus(mingleStatusField)
+        if status not in mingleIgnoreResolved:
+            counter += 1
+            cardToUpdate = (cardId, bug.get('id'))
+            cardsToUpdate.append(cardToUpdate)
+            if not pretend:
+                # update the card to 'ready for signoff'
+                # and make sure it's in this iteration
+                cardParams = {
+                    'card[properties][][name]': mingleStatusField,
+                    'card[properties][][value]': mingleResolvedStatus
+                }
+                mingle.updateCard(cardId, cardParams)
+                cardParams = {
+                    'card[properties][][name]': mingleIterationPropertyName,
+                    'card[properties][][value]': mingleResolvedIteration
+                }
+                mingle.updateCard(cardId, cardParams)
+    bingle.info('Number of bug cards updated: %s' % counter)
+    bingle.info("Mingle cards/bugs updated updated:")
+    for cardToUpdate in cardsToUpdate:
+        bingle.info('%scards/%s, http://bugzilla.wikimedia.org/%s' %
+                   (mingleUrlBase, cardToUpdate[0], cardToUpdate[1]))
+
+
+def execute(standalone=False, pretend=False):
+    bzSearchParams = getBzSearchParams()
+    bugs = fetchBugsResolved(bzSearchParams)
+    reconcileMingle(bugs, options.pretend)
+    if standalone and not pretend:
+        # update pickle
+        bingle.updatePickleTime()
+
+
 if __name__ == "__main__":
     parser = OptionParser()
     parser.add_option("-c", "--config", dest="config",
@@ -38,73 +111,21 @@ if __name__ == "__main__":
         config.get('mingle', 'properties'))
     mapping = createDictionaryFromPropertiesList(
         config.get('mapping', 'properties'))
+    statusResolved = config.get('bingle', 'statusResolved')
+    mingleStatusField = config.get('bingle', 'mingleStatusField')
+    mingleResolvedStatus = config.get('bingle', 'mingleResolvedStatus')
+    mingleIterationPropertyName = config.get('bingle',
+                                             'mingleIterationPropertyName')
+    mingleResolvedIteration = config.get('bingle', 'mingleResolvedIteration')
+    mingleIgnoreResolved = [item.strip() for item in config.get(
+        'bingle', 'mingleIgnoreResolved').split(',')]
 
     bingle = Bingle(debug=debug, picklePath=picklePath)
     bingle.info("Pretend mode: %s" % options.pretend)
+    bingle.info("Ignoring bugs in: %s" % mingleIgnoreResolved)
 
     # prepare Mingle instance
     mingle = Mingle(auth, apiBaseUrl)
 
     fromTime = bingle.getTimeFromPickle()
-    bzSearchParams = {
-        'product': product,
-        'component': component,
-        'status': ['RESOLVED'],  # make configurable
-    }
-    if fromTime:
-        bzSearchParams['last_change_time'] = fromTime
-        bingle.info(bzSearchParams)
-    bugzillaPayload = {
-        'method': 'Bug.search',
-        'params': json.dumps([bzSearchParams])
-    }
-    # fetch matching bugs
-    bugs = bingle.getBugEntries(bugzillaPayload)
-    bingle.info('Number of bugs: %s' % len(bugs))
-    counter = 0
-    cardsToUpdate = []
-    for bug in bugs:
-        # see if there's a mingle card matching this bug
-        # TODO: refactor this; it's repeated below
-        if len(bugIdFieldName) > 0:
-            foundBug = mingle.findCardNumByBugId(
-                bugCard, bug.get('id'), bugIdFieldName)
-        else:
-            foundBug = mingle.findCardNumByBugName(
-                bugCard, bug.get('id'), bug.get('summary'))
-        bingle.info(mingle.dumpRequest())
-        if len(foundBug) < 1:
-            # eh... we probably want to do something else here
-            continue
-        cardId = foundBug[0]['Number']
-        # figure out the card's status
-        # TODO: make 'status' field configurable
-        status = mingle.getCardById(cardId).getStatus('Status')
-        # TODO: make this list of statuses configurable
-        if status not in ['In Development',
-                          'Awaiting Final Code Review',
-                          'Ready for Signoff',
-                          'Accepted']:
-            counter += 1
-            cardToUpdate = (cardId, bug.get('id'))
-            cardsToUpdate.append(cardToUpdate)
-            if not options.pretend:
-                # update the card to 'ready for signoff'
-                # and make sure it's in this iteration
-                cardParams = {
-                    'card[properties][][name]': 'Status',
-                    'card[properties][][value]': 'Ready for Signoff'
-                }
-                mingle.updateCard(cardId, cardParams)
-                cardParams = {
-                    'card[properties][][name]': 'Iteration',
-                    'card[properties][][value]': '(Current iteration)'
-                }
-                mingle.updateCard(cardId, cardParams)
-    if not options.pretend:
-        # update pickle
-        bingle.updatePickleTime()
-    bingle.info('Number of bug cards updated: %s' % counter)
-    bingle.info("Mingle cards/bugs updated updated:")
-    for cardToUpdate in cardsToUpdate:
-        bingle.info('%scards/%s, http://bugzilla.wikimedia.org/%s' % (mingleUrlBase, cardToUpdate[0], cardToUpdate[1]))
+    execute(standalone=True, pretend=options.pretend)

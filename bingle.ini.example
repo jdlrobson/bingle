@@ -38,3 +38,24 @@ component=MobileFrontend
 
 [mapping]
 properties=
+
+[bingle]
+# Bugzilla status to consider a bug 'resolved'
+statusResolved=RESOLVED
+
+# The field used in Mingle to indicate card status
+mingleStatusField=Status
+
+# The status to move 'resolved' bugs to in Mingle
+mingleResolvedStatus=Ready for Signoff
+
+# The name of the property that denotes a sprint or iteration
+mingleIterationPropertyName=Iteration
+
+# The iteration in which to mark bugs resolved
+mingleResolvedIteration=(Current iteration)
+
+# Comma separated list of statuses for which to ignore bug reconciliation
+# That is... if a bug card is already in the mingleResolvedIteration and in
+# one of these statuses, leave it alone.
+mingleIgnoreResolved=In Development,Awaiting Final Code Review,Ready for Signoff,Accepted
