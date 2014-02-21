@@ -5,6 +5,7 @@ import re
 import json
 import requests
 from optparse import OptionParser
+from cgi import escape as htmlEscape
 
 from lib.bingle import Bingle
 from lib.mingle import Mingle
@@ -99,11 +100,14 @@ if __name__ == "__main__":
         bugCardName = mingle.generateMingleBugCardName(
             bug.get('id', '---'), bug.get('summary').encode('ascii', 'ignore'))
         # set common mingle parameters
-        description = comments.get('comments')[0].get('text') + link
+        description = htmlEscape(
+            comments.get('comments')[0].get('text')).replace(
+            "\n", "<br />") + link
+
         cardParams = {
             'card[name]': bugCardName,
             'card[card_type_name]': bugCard,
-            'card[description]': description.replace("\n", "<br />"),
+            'card[description]': description,
             'card[created_by]': auth['username'],
         }
 
