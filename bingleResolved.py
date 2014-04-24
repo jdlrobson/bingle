@@ -51,7 +51,7 @@ def reconcileMingle(bingle, mingle, bugs, pretend=True):
             continue
         cardId = foundBug[0]['Number']
         # figure out the card's status
-        status = mingle.getCardById(cardId).getStatus(mingleStatusField)
+        status = mingle.getCardById(cardId).getPropertyByName(mingleStatusField)
         if status not in mingleIgnoreResolved:
             counter += 1
             cardToUpdate = (cardId, bug.get('id'))

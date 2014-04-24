@@ -97,20 +97,26 @@ class MingleCard:
         self.cardXml = cardXml
 
     def getElementTree(self):
-        if not self.cardXmlTree:
+        if self.cardXmlTree is None:
             self.createElementTree()
         return self.cardXmlTree
 
     def createElementTree(self):
         self.cardXmlTree = ET.fromstring(self.cardXml)
 
-    def getStatus(self, statusPropName):
+    def getPropertyByName(self, propName):
         status = None 
         for props in self.getElementTree().findall('./properties/property'):
-            if props.find('name').text == statusPropName:
+            if props.find('name').text == propName:
                 status = props.find('value').text
                 break
         return status
+
+    def getName(self):
+        return self.getElementTree().find('./name').text
+
+    def getDescription(self):
+        return self.getElementTree().find('./description').text
 
     def __str__(self):
         return self.cardXml
