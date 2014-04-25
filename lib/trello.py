@@ -76,9 +76,10 @@ class Trello:
         return boardId
 
     def getLatestBoardId(self, boardsJson):
+        print boardsJson
         # sprint names are like: 'Mobile App - Sprint 9'
         # we want to find the latest
-        sprintNumRegex = re.compile('sprint (\d+)', re.I)
+        sprintNumRegex = re.compile('sprint (\d+)', re.I|re.U)
         boards = []
         for board in boardsJson:
             sprintNum = sprintNumRegex.search(board['name'])
@@ -96,7 +97,7 @@ class Trello:
         boards.sort()
         boardId = boards[-1][1]
         if self.debug:
-            print "Board name: %s" % boards[-1][2]
+            print "Board name: %s" % boards[-1][2].encode('UTF-8', 'ignore')
         return boardId
 
     def searchCardsByName(self, cardTitle):
