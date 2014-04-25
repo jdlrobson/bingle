@@ -26,7 +26,6 @@ if __name__ == "__main__":
     tListId = trello.getBugListId()
 
     bingle = Bingle(debug=debug, picklePath=picklePath)
-    # @TODO update to use API rather than feeds
     fromTime = bingle.getTimeFromPickle()
     params = {
         'product': product,
