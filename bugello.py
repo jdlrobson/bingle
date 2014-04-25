@@ -2,6 +2,7 @@
 
 import ConfigParser
 import json
+import html2text
 from optparse import OptionParser
 from lib.bingle import Bingle
 from lib.trello import Trello
@@ -65,7 +66,17 @@ if __name__ == "__main__":
                 print "Card %s already exists." % cardTitle
             continue
 
-        bugUrl = 'https://bugzilla.wikimedia.org/%s' % entry.get('id')
+        # retrieve bug comments @TODO refactor this (duplicating from bingle)
+        comment_payload = {'method': 'Bug.comments', 'params': json.dumps(
+            [{'ids': ['%s' % bugId]}])}
+        comments = bingle.getBugComments(comment_payload, bugId)
+        link = '<br><p>Full bug report at https://bugzilla.wikimedia.org/%s' \
+            '</p>' % bugId
+
+        # set common mingle parameters
+        description = comments.get('comments')[0].get('text').replace(
+            "\n", "<br />") + link
+
         # add card to current board
-        trello.postNewCard(cardTitle, bugUrl, tListId)
+        trello.postNewCard(cardTitle, html2text.html2text(description), tListId)
     bingle.updatePickleTime()
