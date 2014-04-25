@@ -45,13 +45,17 @@ if __name__ == "__main__":
     }])}
     for bug in bingle.getBugEntries(bugzillaPayload):
         bingle.info("Bug XML: %s" % bug)
+
+        bugCardName = bingle.generateBugCardName(
+            bug.get('id', '---'), bug.get('summary').encode('ascii', 'ignore'))
+
         # see if there's a mingle card matching this bug
         if len(bugIdFieldName) > 0:
             foundBug = mingle.findCardNumByBugId(
                 bugCard, bug.get('id'), bugIdFieldName)
         else:
-            foundBug = mingle.findCardNumByBugName(
-                bugCard, bug.get('id'), bug.get('summary'))
+            foundBug = mingle.findCardNumByName(
+                bugCard, bugCardName)
         bingle.info(mingle.dumpRequest())
         if len(foundBug) > 0:
             bingle.info('Existing card(s) %s match bug %s, so skip it.' % (
@@ -69,8 +73,6 @@ if __name__ == "__main__":
         link = '<br><p>Full bug report at https://bugzilla.wikimedia.org/%s' \
             '</p>' % bug.get('id')
 
-        bugCardName = mingle.generateMingleBugCardName(
-            bug.get('id', '---'), bug.get('summary').encode('ascii', 'ignore'))
         # set common mingle parameters
         description = htmlEscape(
             comments.get('comments')[0].get('text')).replace(

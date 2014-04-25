@@ -33,15 +33,6 @@ class Mingle:
         r.raise_for_status()
         return r.json()
 
-    def generateMingleBugCardName(self, bugId, bugName):
-        # Mingle removes extraneous spaces mid-string; do the same here
-        bugName = ' '.join(bugName.split())
-        return '[Bug %s] %s' % (bugId, bugName.replace("'", "\'"))
-
-    def findCardNumByBugName(self, cardType, bugId, bugName):
-        bugCardName = self.generateMingleBugCardName(bugId, bugName)
-        return self.findCardNumByName(cardType, bugCardName)
-
     def findCardNumByName(self, cardType, cardName):
         # Look for mingle card with matching name.
         mql = 'SELECT number WHERE Type=\'%s\' AND name=\'%s\'' \

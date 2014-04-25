@@ -63,6 +63,11 @@ class Bingle:
         pickle.dump(timeToPickle, pFile)
         pFile.close()
 
+    def generateBugCardName(self, bugId, bugName):
+        # remove extraneous spaces mid-string; do the same here
+        bugName = ' '.join(bugName.split())
+        return '[Bug %s] %s' % (bugId, bugName.replace("'", "\'"))
+
     def getFeedEntries(self):
         feed = feedparser.parse(self.feedUrl)
         self.info("Number of bugs found: %d" % len(feed.entries))
