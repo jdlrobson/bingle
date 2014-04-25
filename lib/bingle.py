@@ -66,7 +66,11 @@ class Bingle:
     def generateBugCardName(self, bugId, bugName):
         # remove extraneous spaces mid-string; do the same here
         bugName = ' '.join(bugName.split())
-        return '[Bug %s] %s' % (bugId, bugName.replace("'", "\'"))
+        prefix = self.getBugCardPrefix( bugId)
+        return '%s %s' % (prefix, bugName.replace("'", "\'"))
+
+    def getBugCardPrefix(self, bugId):
+        return '[Bug %s]' % (bugId)
 
     def getFeedEntries(self):
         feed = feedparser.parse(self.feedUrl)

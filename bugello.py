@@ -1,11 +1,10 @@
 #!/usr/bin/env python
 
 import ConfigParser
-import sys
-import requests
 import json
 from optparse import OptionParser
 from lib.bingle import Bingle
+from lib.trello import Trello
 
 
 if __name__ == "__main__":
@@ -43,19 +42,28 @@ if __name__ == "__main__":
     }
 
     for entry in bingle.getBugEntries(bugzillaPayload):
-        # 1 look for existence of the card
-        cardTitle = entry.get('summary').encode('UTF-8', 'ignore')
-        cards = trello.searchCardsByName(cardTitle)
-        # check if we actually have a match
-        # it looks like the API search query might do a fuzzy search, so we want to
-        # make sure we only get a full match
         cardExists = False
-        for card in cards:
-            if card['name'] == cardTitle:
+        bugId = entry.get('id', '---')
+        bugTitle = entry.get('summary').encode('UTF-8', 'ignore')
+        if trello.prefixBugTitle:
+            cardTitle = bingle.generateBugCardName(bugId, bugTitle)
+            searchString = bingle.getBugCardPrefix(bugId)
+            cards = trello.searchCardsByName(searchString)
+            if len(cards):
                 cardExists = True
+        else:
+            cardTitle = bugTitle
+            # 1 look for existence of the card
+            cards = trello.searchCardsByName(cardTitle)
+            # check if we actually have a match
+            # it looks like the API search query might do a fuzzy search, so we want to
+            # make sure we only get a full match
+            for card in cards:
+                if card['name'] == cardTitle:
+                    cardExists = True
         if cardExists:
             if debug:
-                print "Card %s already exists." % card['name']
+                print "Card %s already exists." % cardTitle
             continue
 
         bugUrl = 'https://bugzilla.wikimedia.org/%s' % entry.get('id')

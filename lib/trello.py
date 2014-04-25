@@ -9,6 +9,7 @@ class Trello:
     targetListName = None
     pin = None
     useLatestBoard = False
+    prefixBugTitle = False
     debug = False
 
     def __init__(self, config=None, debug=False):
@@ -27,20 +28,25 @@ class Trello:
     def loadConfig(self, config):
         # expects a list of tuples from ConfigParser.items()
         truths = (1, 'yes', 'true', 'True', 'on', True, '1')
+        falses = (0, 'no', 'false', 'False', 'off', False, '0')
         validConfigParams = (
             'appKey',
             'appName',
             'boardBaseName',
             'targetListName',
             'pin',
-            'useLatestBoard'
+            'useLatestBoard',
+            'prefixBugTitle'
         )
+        bools = ('useLatestBoard', 'prefixBugTitle')
         for items in config:
             if items[0] not in validConfigParams:
                 continue
-            elif items[0] == 'useLatestBoard':
+            elif items[0] in bools:
                 if items[1] in truths:
-                    self.useLatestBoard = True
+                    setattr(self, items[0], True)
+                elif items[1] in falses:
+                    setattr(self, items[0], False)
             else:
                 setattr(self, items[0], items[1])
 

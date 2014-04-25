@@ -22,6 +22,8 @@ useLatestBoard=False
 targetListName=To Do
 ; first time you run bugello, you should be given a URL from which to fetch your pin
 pin=
+; When True, bug titles will be prefixed with [Bug $bug_num]. Otherwise, there will be no prefix
+prefixBugTitle=False
 
 [bugzilla]
 product=Wikipedia App,Commons App
