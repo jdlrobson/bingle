@@ -80,6 +80,21 @@ if __name__ == "__main__":
         # add card to current board
         result = trello.postNewCard(cardTitle, html2text.html2text(description), tListId)
 
+        # post comment back to bz
+        comment = 'Prioritization and scheduling of this bug is tracked on ' \
+            'Trello card %s' % (result.json().get('shortUrl'))
+        bugzilla_payload = {
+            'jsonrpc': '1.1',
+            'method': 'Bug.add_comment', 'id': 1,
+            'params': [{
+                'id': '%s' % bugId,
+                'Bugzilla_login': config.get('auth_bugzilla', 'username'),
+                'Bugzilla_password': config.get('auth_bugzilla', 'password'),
+                'comment': comment
+            }]
+        }
+        bingle.addBugComment(bugzilla_payload, bugId)
+
         # post additional comments
         comments = comments.get('comments')[1:]
         for comment in comments:
