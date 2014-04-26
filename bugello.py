@@ -78,5 +78,11 @@ if __name__ == "__main__":
             "\n", "<br />") + link
 
         # add card to current board
-        trello.postNewCard(cardTitle, html2text.html2text(description), tListId)
+        result = trello.postNewCard(cardTitle, html2text.html2text(description), tListId)
+
+        # post additional comments
+        comments = comments.get('comments')[1:]
+        for comment in comments:
+            trelloComment = '%s ~%s' % (comment.get('text'), comment.get('author'))
+            trello.postComment(result.json().get('id'), trelloComment)
     bingle.updatePickleTime()

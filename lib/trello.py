@@ -82,7 +82,6 @@ class Trello:
         return boardId
 
     def getLatestBoardId(self, boardsJson):
-        print boardsJson
         # sprint names are like: 'Mobile App - Sprint 9'
         # we want to find the latest
         sprintNumRegex = re.compile('sprint (\d+)', re.I|re.U)
@@ -182,4 +181,19 @@ class Trello:
             print "No target list name set in config file."
             sys.exit(1)
         return self.getListIdByName(self.targetListName)
+
+    def postComment(self, cardId, comment):
+        commentParams = {'text': comment}
+        payload = dict(self.getBaseParams().items() + commentParams.items())
+        try:
+            apiEndpoint = 'https://trello.com/1/cards/%s/actions/comments' % cardId
+            r = requests.post(apiEndpoint, params=payload)
+            r.raise_for_status()
+            return r
+        except requests.exceptions.HTTPError as e:
+            if self.debug:
+                print "Error adding comments for card: %s" % cardId
+                print "Reason: %s" % e
+            sys.exit(-1)
+
 
