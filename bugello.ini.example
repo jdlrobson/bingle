@@ -8,6 +8,13 @@ picklePath=bugello.pickle
 ; bugzilla Feed URL that relies on a timestamp, but with timestamp query param left out
 bugzillaFeed=https://bugzilla.wikimedia.org/buglist.cgi?bug_status=NEW&component=MobileFrontend&f1=creation_ts&list_id=195375&o1=greaterthan&product=MediaWiki%20extensions&query_format=advanced&resolution=---&resolution=LATER&resolution=DUPLICATE&title=Bug%20List&ctype=atom
 
+[selenium]
+; Set Firefox and Chrome RSS feed urls
+firefox=https://wmf.ci.cloudbees.com/job/MobileFrontend-en.m.wikipedia.beta.wmflabs.org-linux-firefox/rssAll
+chrome=https://wmf.ci.cloudbees.com/job/MobileFrontend-en.m.wikipedia.beta.wmflabs.org-linux-chrome/rssAll
+; When this amount of tests have failed in a row a card will be created in Trello
+threshold=3
+
 [trello]
 ; https://trello.com/docs/gettingstarted/index.html#getting-an-application-key
 appKey=
