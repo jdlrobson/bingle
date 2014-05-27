@@ -47,7 +47,7 @@ def make_card(trello, info, browser):
     if not is_dupe(trello, cardTitle):
         tListId = trello.getBugListId()
         print "Posting card for %s with title %s"%(browser, cardTitle)
-        result = trello.postNewCard(cardTitle, description, tListId)
+        result = trello.postNewCard(cardTitle, description, tListId, labels='red')
     else:
         print 'Ignoring. Card with title %s already exists.'%cardTitle
 

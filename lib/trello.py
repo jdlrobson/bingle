@@ -123,11 +123,12 @@ class Trello:
                 print "Reason: %s" % e
         return cards
 
-    def postNewCard(self, cardTitle, bugUrl, tListId):
+    def postNewCard(self, cardTitle, bugUrl, tListId, labels=''):
         newCardParams = {
             'name': cardTitle,
             'desc': bugUrl,
             'idList': tListId,
+            'labels': labels,
             'due': None
         }
         payload = dict(self.getBaseParams().items() + newCardParams.items())
