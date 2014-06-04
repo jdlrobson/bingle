@@ -44,7 +44,9 @@ def make_card(trello, info, browser):
     description = 'Tests have been failing since build %(build)s.\n\n %(url)s\n'%args
 
     # post the card
-    if not is_dupe(trello, cardTitle):
+    if build is None:
+        print "Ignoring. Can't find a recent build that passed for %s"%browser
+    elif not is_dupe(trello, cardTitle):
         tListId = trello.getBugListId()
         print "Posting card for %s with title %s"%(browser, cardTitle)
         result = trello.postNewCard(cardTitle, description, tListId, labels='red')
