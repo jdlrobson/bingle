@@ -1,27 +1,28 @@
 #/usr/bin/env python
 import ConfigParser
 import re
-import feedparser
+import requests
 from optparse import OptionParser
 from lib.trello import Trello
 
 def check_broken_status(url):
-    feed = feedparser.parse(url)
-    broken_for_builds = 0
-    url = None
-    build = None
-    for entry in feed.entries:
-        if 'normal' in entry.title:
-            build = re.search('#([0-9]+)', entry.title).group(1)
-            break
-        if 'broken' in entry.title:
-            if not url:
-                url = entry.link
-            broken_for_builds += 1
+    headers = {'content-type': 'application/json'}
+    response = requests.get(url + '/api/json?pretty=true', headers=headers)
+    data = response.json()
+    project = data['displayName']
+    last_success = data['lastSuccessfulBuild']['number']
+    last_failure = data['lastUnsuccessfulBuild']['number']
+    # check if the last fail was more recent then the success
+    if last_failure > last_success:
+        # we are in an error state. How many errors?
+        broken_for_builds = last_failure - last_success
+    else:
+        broken_for_builds = 0
 
     return {
         'url': url,
-        'last_passed': build,
+        'project': project,
+        'last_passed': last_success,
         'num_fails': broken_for_builds
     }
 
@@ -33,22 +34,23 @@ def is_dupe(trello, cardTitle):
     else:
         return False
 
-def make_card(trello, info, browser):
+def make_card(trello, info):
     build = info['last_passed']
+    project = info['project']
     args = {
         'build': build,
-        'browser': browser,
+        'project': project,
         'url': info['url']
     }
-    cardTitle = '[%(browser)s Build > %(build)s] Failing Selenium tests!'%args
+    cardTitle = '[%(project)s Build > %(build)s] Failing Selenium tests!'%args
     description = 'Tests have been failing since build %(build)s.\n\n %(url)s\n'%args
 
     # post the card
     if build is None:
-        print "Ignoring. Can't find a recent build that passed for %s"%browser
+        print "Ignoring. Can't find a recent build that passed for %s"%project
     elif not is_dupe(trello, cardTitle):
         tListId = trello.getBugListId()
-        print "Posting card for %s with title %s"%(browser, cardTitle)
+        print "Posting card for %s with title %s"%(project, cardTitle)
         result = trello.postNewCard(cardTitle, description, tListId, labels='red')
     else:
         print 'Ignoring. Card with title %s already exists.'%cardTitle
@@ -62,26 +64,18 @@ def init(config):
         threshold = 3
 
     try:
-        feed_url_firefox = config.get( 'selenium', 'firefox' )
-        firefox = check_broken_status(feed_url_firefox)
-        failures = firefox['num_fails']
-        print "Firefox: %s failures."%failures
-        if failures >= threshold:
-            print "Making card."
-            make_card(trello, firefox, 'firefox')
+        project_url = config.get( 'selenium', 'projectUrl' )
+        urls = project_url.split( '\n' )
+        print urls
+        for url in urls:
+            status = check_broken_status(url)
+            failures = status['num_fails']
+            print "%s failures in %s."%(failures,status['project'])
+            if failures >= threshold:
+                print "Making card."
+                make_card(trello, status)
     except ConfigParser.NoOptionError:
-        print 'Please set firefox variable in section selenium in bugello.ini'
-
-    try:
-        feed_url_chrome = config.get( 'selenium', 'chrome' )
-        chrome = check_broken_status(feed_url_chrome)
-        failures = chrome['num_fails']
-        print "Chrome: %s failures."%failures
-        if failures >= threshold:
-            print "Making card."
-            make_card(trello, chrome, 'chrome')
-    except ConfigParser.NoOptionError:
-        print 'Please set chrome variable in section selenium in bugello.ini'
+        print 'Please set projectUrl variable in section selenium in bugello.ini'
 
 if __name__ == "__main__":
     # config stuff
