@@ -10,10 +10,19 @@ def check_broken_status(url):
     response = requests.get(url + '/api/json?pretty=true', headers=headers)
     data = response.json()
     project = data['displayName']
-    last_success = data['lastSuccessfulBuild']['number']
-    last_failure = data['lastUnsuccessfulBuild']['number']
+    try:
+        last_success = data['lastSuccessfulBuild']['number']
+    except TypeError:
+        # Build might never have passed.
+        last_success = -1
+
+    try:
+        last_failure = data['lastUnsuccessfulBuild']['number']
+    except TypeError:
+        last_failure = -1
+
     # check if the last fail was more recent then the success
-    if last_failure > last_success:
+    if last_failure > -1 and last_failure > last_success:
         # we are in an error state. How many errors?
         broken_for_builds = last_failure - last_success
     else:
