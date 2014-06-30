@@ -72,7 +72,8 @@ class Trello:
             boardId = None
             # in case the query returned multiple boards, pick the right one
             for board in boards:
-                if board['name'] == self.boardBaseName:
+                # Encode as utf-8 to match api result
+                if board['name'].encode("utf8") == self.boardBaseName:
                     boardId = board['id']
             if not boardId:
                 print "Could not find board by name %s." % self.boardBaseName
